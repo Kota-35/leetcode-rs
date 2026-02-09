@@ -1,0 +1,10 @@
+{
+  "inlay_hints": {
+    "enabled": true,
+  },
+  "diagnostics": {
+    "inline": {
+      "enabled": true,
+    },
+  },
+}
