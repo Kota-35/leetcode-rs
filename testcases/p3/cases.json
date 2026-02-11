@@ -1,0 +1,19 @@
+{
+  "cases": [
+    {
+      "id": "case1",
+      "input": { "s": "abcabcbb" },
+      "output": 3
+    },
+    {
+      "id": "case2",
+      "input": { "s": "bbbbb" },
+      "output": 1
+    },
+    {
+      "id": "case3",
+      "input": { "s": "pwwkew" },
+      "output": 3
+    }
+  ]
+}
