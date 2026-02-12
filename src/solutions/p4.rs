@@ -19,20 +19,43 @@ impl Solution {
     //
     // 方針:
     // 2配列の「分割位置」を二分探索する。
+    // 通常2つの配列の中央値を求めるには、それらを合体させて並び替えれば簡単たが、
+    // それでは時間がかかりすぎる。短い方の配列に対して2分探索を行うことで、計算量を大幅に減らしている。
     //
-    // 1. nums1 を短い方、nums2 を長い方にする
-    // 2. nums1 の分割位置 i を二分探索で決める
-    // 3. nums2 側は j = (m+n+1)/2 - i で連動する
-    // 4. 条件
-    //    - left1 <= right2
-    //    - left2 <= right1
-    //    が満たされれば正しい分割
-    // 5. 正しい分割が見つかったら中央値を計算
-    //    - 全体長が奇数: max(left1, left2)
-    //    - 偶数: (max(left1,left2) + min(right1,right2)) / 2
     //
-    // 計算量:
-    // 短い方の配列長を m とすると O(log m) = O(log(m+n))
+    // # アルゴリズムの手順
+    // Step1: 短い方の配列を選ぶ
+    // まず、計算を早くするために、2つの配列のうち長さが短い方を探索対象にする。
+    // 長い方はそれに応じて自動的に位置が決まるため、探索する必要がない
+    // (以降、短い配列をa, 他方の配列をbとする)
+    //
+    // Step2: 配列の切れ目を決める
+    // 2つの配列を合わせた時、ちょうど真ん中で半分に分かれるような切れ目を探す
+    // - 配列 a の切れ目を i ( 2分探索で決める位置 ) とする
+    // - 配列 b の切れ目 j は 全体の半分になる様に計算で求める ( j = ( 全体の数 + 1)/2 - i)
+    //
+    // Step3: 正しく分割できているか確認する
+    // ここで、適当に決めた切れ目 i と j が「中央値の境界」として正しいかを確認する
+    // 配列 a と b　はそれぞれの中ではすでに整列されている。そのため、「配列 a の左側」と「配列 b の右側」
+    // および「配列 b の左側」と「配列 a の右側」の関係だけをチェックする
+    // - 条件1: a_left ( a の左側最大 ) <= b_right ( b の右側最小 )
+    // - 条件2: b_left ( b の左側最大 ) <= a_right ( a の右側最小)
+    // この2つが満たされていれば、左半分にあるすべての数字は、右半分にあるすべての数字より小さい(または等しい)
+    // ことが保証される。正しい分割位置が見つかったことになる。
+    //
+    // Step4: 探索範囲を調整する
+    // もし条件が満たされていない場合、2分探索の要領で切れ目 i を動かす
+    // - もし a_left > b_right ならば、 a の左側が大きすぎる ( 右に行きすぎている ) ため、探索範囲を左にずらす ( hi を上げる )
+    // - そうでなければ、探索範囲を右にずらす ( lo を上げる )
+    //
+    // # 中央値の計算
+    // 正しい切れ目がみつかったら、最後に中央値を計算する
+    // - 合計要素数が奇数の場合: 右側のグループの中で一番大きい値 ( max(a_left, b_left)) が中央値
+    // - 合計要素数が偶数の場合: 「左側の最大値」と「右側の最小値」の平均 ( (max(a_left, b_left) + min(a_right, b_right)) / 2 ) が中央値
+    //
+    // # 補足: 端っこの処理
+    // 切れ目が配列の先頭や末尾に来てしまった場合 (例: i = 0 や i = m )、比較相手がいなくなる。
+    // その場合システム上の最小値 ( MIN ) や最大値 ( MAX ) を使うことで、条件判定が壊れないようにする
     pub fn find_median_sorted_arrays(nums1: Vec<i32>, nums2: Vec<i32>) -> f64 {
         // a を短い方に固定すると、探索範囲が最小になり境界処理もしやすい
         let (a, b) = if nums1.len() <= nums2.len() {
@@ -52,19 +75,19 @@ impl Solution {
             let i = (lo + hi) / 2;
             let j = half - i;
 
-            let left1 = if i == 0 { i32::MIN } else { a[i - 1] };
-            let right1 = if i == m { i32::MAX } else { a[i] };
-            let left2 = if j == 0 { i32::MIN } else { b[j - 1] };
-            let right2 = if j == n { i32::MAX } else { b[j] };
+            let a_left = if i == 0 { i32::MIN } else { a[i - 1] };
+            let a_right = if i == m { i32::MAX } else { a[i] };
+            let b_left = if j == 0 { i32::MIN } else { b[j - 1] };
+            let b_right = if j == n { i32::MAX } else { b[j] };
 
-            if left1 <= right2 && left2 <= right1 {
+            if a_left <= b_right && b_left <= a_right {
                 if (m + n) % 2 == 1 {
-                    return max(left1, left2) as f64;
+                    return max(a_left, b_left) as f64;
                 }
-                return (max(left1, left2) as f64
-                    + min(right1, right2) as f64)
+                return (max(a_left, b_left) as f64
+                    + min(a_right, b_right) as f64)
                     / 2.0;
-            } else if left1 > right2 {
+            } else if a_left > b_right {
                 hi = i.saturating_sub(1);
             } else {
                 lo = i + 1;
